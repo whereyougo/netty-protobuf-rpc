@@ -1,0 +1,27 @@
+#summary Usage Documentation
+
+= Define Your Service =
+
+The first step is to define your own service. Read up on http://code.google.com/apis/protocolbuffers/docs/proto.html#services for how to do that. We support both blocking and non blocking services, although it makes more sense for you to use the asynchronous service (non-blocking), since Netty is inherently asynchronous. 
+
+= Firing Up Your Server =
+
+There's only one API class to worry about here, and that's `NettyRpcServer`. The `NettyRpcServer` constructor takes a `ChannelFactory`. You can read more about `ChannelFactory` at http://www.jboss.org/file-access/default/members/netty/freezone/api/3.0/org/jboss/netty/channel/ChannelFactory.html. Here's an example of how to create a `NettyRpcServer`, taken from `com.googlecode.protobuf.netty.example.CalculatorServer`:
+{{{
+NettyRpcServer server = new NettyRpcServer(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
+}}}
+Netty developers recommend you use the `Executors.newCachedThreadPool()`, but you're free to use any type of thread pool you want.
+
+The next step is to register your service(s). There's no limit to how many blocking/non-blocking services your server can be responsible for at once:
+{{{
+server.registerService(CalcService.newReflectiveService(new CalculatorServiceImpl()));
+server.registerBlockingService(CalcService.newReflectiveBlockingService(new CalculatorServiceImpl()));
+}}}
+As you can see, you can even register the same service as blocking and non-blocking (provided you implement both interfaces). 
+
+Once you register all your services, just fire up the server and you're good to go:
+{{{
+server.serve(new InetSocketAddress(8080));
+}}}
+
+That's all there is to it! In a few lines of code, you have deployed a multi-threaded, scalable RPC service!
